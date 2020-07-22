@@ -3,6 +3,7 @@ from flask import Flask, request, jsonify, abort
 from sqlalchemy import exc
 import json
 from flask_cors import CORS
+import sys
 
 from .database.models import db_drop_and_create_all, setup_db, Drink
 from .auth.auth import AuthError, requires_auth
@@ -16,7 +17,7 @@ CORS(app)
 !! NOTE THIS WILL DROP ALL RECORDS AND START YOUR DB FROM SCRATCH
 !! NOTE THIS MUST BE UNCOMMENTED ON FIRST RUN
 '''
-# db_drop_and_create_all()
+#db_drop_and_create_all()
 
 ## ROUTES
 '''
@@ -27,7 +28,18 @@ CORS(app)
     returns status code 200 and json {"success": True, "drinks": drinks} where drinks is the list of drinks
         or appropriate status code indicating reason for failure
 '''
+@app.route('/drinks', methods=['GET'])
+def get_drinks():
+    drinks = Drink.query.all()
+    drinks_short = [drink.short() for drink in drinks]
 
+    if len(drinks) ==0:
+        abort(404)
+    
+    return jsonify({
+        'success': True,
+        'drinks': drinks_short
+    })
 
 '''
 @TODO implement endpoint
@@ -48,8 +60,36 @@ CORS(app)
     returns status code 200 and json {"success": True, "drinks": drink} where drink an array containing only the newly created drink
         or appropriate status code indicating reason for failure
 '''
+@app.route('/drinks', methods=['POST'])
+def post_drinks():
+    body = request.get_json()
 
+    if (not body):
+        abort(422)
 
+    title = body.get('title', None)
+    recipe = body.get('recipe', None)
+
+    print(recipe)
+
+    if title == None or recipe == None:
+        abort(422)
+    
+    try:
+        drink = Drink(
+            title=title,
+            recipe=str(recipe)
+        )
+
+        drink.insert()
+    except:
+        print(sys.exc_info())
+        abort(400)
+
+    return jsonify({
+        'success': True,
+        'drinks': drink.long() 
+    })
 '''
 @TODO implement endpoint
     PATCH /drinks/<id>
@@ -73,7 +113,22 @@ CORS(app)
     returns status code 200 and json {"success": True, "delete": id} where id is the id of the deleted record
         or appropriate status code indicating reason for failure
 '''
+@app.route('/drinks/<int:drink_id>', methods=['DELETE'])
+def delete_drink(drink_id):
 
+    drink = Drink.query.get(drink_id)
+    if drink == None:
+        abort(404)
+    
+    try:
+        drink.delete()
+    except:
+        abort(400)
+
+    return jsonify({
+        'success': True,
+        'delete': drink_id
+    })
 
 ## Error Handling
 '''
