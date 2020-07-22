@@ -17,7 +17,7 @@ CORS(app)
 !! NOTE THIS WILL DROP ALL RECORDS AND START YOUR DB FROM SCRATCH
 !! NOTE THIS MUST BE UNCOMMENTED ON FIRST RUN
 '''
-#db_drop_and_create_all()
+db_drop_and_create_all()
 
 ## ROUTES
 '''
@@ -70,17 +70,14 @@ def post_drinks():
     title = body.get('title', None)
     recipe = body.get('recipe', None)
 
-    print(recipe)
-
     if title == None or recipe == None:
         abort(422)
     
     try:
         drink = Drink(
             title=title,
-            recipe=str(recipe)
+            recipe=json.dumps(recipe)
         )
-
         drink.insert()
     except:
         print(sys.exc_info())
@@ -101,6 +98,9 @@ def post_drinks():
     returns status code 200 and json {"success": True, "drinks": drink} where drink an array containing only the updated drink
         or appropriate status code indicating reason for failure
 '''
+@app.route('/drinks/<int:drink_id>', methods=['PATCH'])
+def patch_drink(drink_id):
+    pass
 
 
 '''
