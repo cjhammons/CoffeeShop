@@ -49,6 +49,18 @@ def get_drinks():
     returns status code 200 and json {"success": True, "drinks": drinks} where drinks is the list of drinks
         or appropriate status code indicating reason for failure
 '''
+@app.route('/drinks-detail', methods=['GET'])
+def get_drinks_detail():
+    drinks = Drink.query.all()
+    drinks_long = [drink.long() for drink in drinks]
+
+    if len(drinks) ==0:
+        abort(404)
+    
+    return jsonify({
+        'success': True,
+        'drinks': drinks_long
+    })
 
 
 '''
@@ -85,7 +97,7 @@ def post_drinks():
 
     return jsonify({
         'success': True,
-        'drinks': drink.long() 
+        'drinks': [drink.long()] 
     })
 '''
 @TODO implement endpoint
@@ -100,7 +112,32 @@ def post_drinks():
 '''
 @app.route('/drinks/<int:drink_id>', methods=['PATCH'])
 def patch_drink(drink_id):
-    pass
+    body = request.get_json()
+
+    if (not body):
+        abort(422)
+
+    title = body.get('title', None)
+    recipe = body.get('recipe', None)
+
+    try:
+        drink = Drink.query.get(drink_id)
+        if drink == None:
+            abort(404)
+
+        if title:
+            drink.title = title
+        
+        if recipe:
+            drink.recipe = recipe
+    except:
+        print(sys.exc_info())
+        abort(400)
+    
+    return jsonify({
+        'success': True,
+        'drinks': [drink]
+    })
 
 
 '''
@@ -157,7 +194,13 @@ def unprocessable(error):
 @TODO implement error handler for 404
     error handler should conform to general task above 
 '''
-
+@app.errorhandler(404)
+def not_found(error):
+    return jsonify({
+      'success': False,
+      'error': 404,
+      'message': 'Not Found'
+    }), 404
 
 '''
 @TODO implement error handler for AuthError
