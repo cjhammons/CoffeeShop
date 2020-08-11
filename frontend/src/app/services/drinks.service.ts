@@ -108,6 +108,8 @@ export class DrinksService {
   }
 
   saveDrink(drink: Drink) {
+    console.log("save drink");
+    
     if (drink.id >= 0) { // patch
       this.http.patch(this.url + '/drinks/' + drink.id, drink, this.getHeaders())
       .subscribe( (res: any) => {
