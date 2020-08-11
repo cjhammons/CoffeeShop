@@ -32,9 +32,6 @@ db_drop_and_create_all()
 def get_drinks():
     drinks = Drink.query.all()
     drinks_short = [drink.short() for drink in drinks]
-
-    if len(drinks) ==0:
-        abort(404)
     
     return jsonify({
         'success': True,
@@ -50,12 +47,10 @@ def get_drinks():
         or appropriate status code indicating reason for failure
 '''
 @app.route('/drinks-detail', methods=['GET'])
-def get_drinks_detail():
+@requires_auth('get:drinks-detail')
+def get_drinks_detail(f):
     drinks = Drink.query.all()
     drinks_long = [drink.long() for drink in drinks]
-
-    if len(drinks) ==0:
-        abort(404)
     
     return jsonify({
         'success': True,
@@ -73,7 +68,8 @@ def get_drinks_detail():
         or appropriate status code indicating reason for failure
 '''
 @app.route('/drinks', methods=['POST'])
-def post_drinks():
+@requires_auth('post:drinks')
+def post_drinks(f):
     body = request.get_json()
 
     if (not body):
@@ -111,7 +107,8 @@ def post_drinks():
         or appropriate status code indicating reason for failure
 '''
 @app.route('/drinks/<int:drink_id>', methods=['PATCH'])
-def patch_drink(drink_id):
+@requires_auth('patch:drinks')
+def patch_drink(f, drink_id):
     body = request.get_json()
 
     if (not body):
@@ -136,7 +133,7 @@ def patch_drink(drink_id):
     
     return jsonify({
         'success': True,
-        'drinks': [drink]
+        'drinks': [drink.long()]
     })
 
 
@@ -151,8 +148,9 @@ def patch_drink(drink_id):
         or appropriate status code indicating reason for failure
 '''
 @app.route('/drinks/<int:drink_id>', methods=['DELETE'])
-def delete_drink(drink_id):
-
+@requires_auth('delete:drinks')
+def delete_drink(f, drink_id):
+    
     drink = Drink.query.get(drink_id)
     if drink == None:
         abort(404)
@@ -206,3 +204,10 @@ def not_found(error):
 @TODO implement error handler for AuthError
     error handler should conform to general task above 
 '''
+@app.errorhandler(AuthError)
+def auth_error(error):
+    return jsonify({
+        'success': False,
+        'error': 401,
+        'message': 'Unauthorized'
+    }), 401
